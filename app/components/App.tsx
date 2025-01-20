@@ -16,9 +16,9 @@ import Visualizer from "./Visualizer";
 
 const App: () => JSX.Element = () => {
   const [transcripts, setTranscripts] = useState<string[]>([]);
-  const { connection, connectToDeepgram, connectionState } = useDeepgram();
-  const { setupMicrophone, microphone, startMicrophone, microphoneState } =
-    useMicrophone();
+  const [isListening, setIsListening] = useState(false);
+  const { connection, connectToDeepgram, disconnectFromDeepgram, connectionState } = useDeepgram();
+  const { setupMicrophone, microphone, startMicrophone, stopMicrophone, microphoneState } = useMicrophone();
   const keepAliveInterval = useRef<any>();
 
   useEffect(() => {
@@ -26,26 +26,45 @@ const App: () => JSX.Element = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => {
-    if (microphoneState === MicrophoneState.Ready) {
-      connectToDeepgram({
-        model: "nova-2",
-        interim_results: true,
-        smart_format: true,
-        filler_words: true,
-        utterance_end_ms: 3000,
-      });
+  const toggleListening = async () => {
+    if (!isListening) {
+      // Start listening
+      if (microphoneState === MicrophoneState.Ready || microphoneState === MicrophoneState.Paused) {
+        try {
+          await connectToDeepgram({
+            model: "nova-2",
+            interim_results: true,
+            smart_format: true,
+            filler_words: true,
+            utterance_end_ms: 3000,
+          });
+          setIsListening(true);
+        } catch (error) {
+          console.error("Failed to connect:", error);
+          // Reset states on error
+          await stopMicrophone();
+          await disconnectFromDeepgram();
+          await setupMicrophone(); // Re-setup microphone
+          setIsListening(false);
+        }
+      } else {
+        // If microphone isn't ready, try to set it up again
+        await setupMicrophone();
+      }
+    } else {
+      // Stop listening
+      await stopMicrophone();
+      await disconnectFromDeepgram();
+      await setupMicrophone(); // Re-setup microphone for next use
+      setIsListening(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [microphoneState]);
+  };
 
   useEffect(() => {
     if (!microphone) return;
     if (!connection) return;
 
     const onData = (e: BlobEvent) => {
-      // iOS SAFARI FIX:
-      // Prevent packetZero from being sent. If sent at size 0, the connection will close. 
       if (e.data.size > 0) {
         connection?.send(e.data);
       }
@@ -62,20 +81,18 @@ const App: () => JSX.Element = () => {
       }
     };
 
-    if (connectionState === LiveConnectionState.OPEN) {
+    if (connectionState === LiveConnectionState.OPEN && isListening) {
       connection.addListener(LiveTranscriptionEvents.Transcript, onTranscript);
       microphone.addEventListener(MicrophoneEvents.DataAvailable, onData);
-
       startMicrophone();
     }
 
     return () => {
-      // prettier-ignore
       connection.removeListener(LiveTranscriptionEvents.Transcript, onTranscript);
       microphone.removeEventListener(MicrophoneEvents.DataAvailable, onData);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [connectionState]);
+  }, [connectionState, isListening]);
 
   useEffect(() => {
     if (!connection) return;
@@ -106,6 +123,22 @@ const App: () => JSX.Element = () => {
           <div className="flex flex-col flex-auto h-full">
             <div className="relative w-full h-full">
               {microphone && <Visualizer microphone={microphone} />}
+              
+              {/* Add control button */}
+              <div className="absolute top-4 left-1/2 transform -translate-x-1/2">
+                <button
+                  onClick={toggleListening}
+                  className={`px-6 py-2 rounded-full font-semibold ${
+                    isListening 
+                      ? 'bg-red-500 hover:bg-red-600' 
+                      : 'bg-green-500 hover:bg-green-600'
+                  } text-white transition-colors`}
+                >
+                  {isListening ? 'Stop Listening' : 'Start Listening'}
+                </button>
+              </div>
+
+              {/* Transcript display */}
               <div className="absolute bottom-[8rem] inset-x-0 max-w-4xl mx-auto text-center">
                 <div className="bg-black/70 p-8 max-h-[60vh] overflow-y-auto">
                   {transcripts.map((transcript, index) => (
