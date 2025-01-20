@@ -10,9 +10,9 @@ const Home = () => {
     <>
       <div className="h-full overflow-hidden">
         {/* New simple header */}
-        <div className="bg-gradient-to-b from-black/50 to-black/10 backdrop-blur-[2px] h-[4rem] flex items-center">
+        <div className="bg-white border-b h-[4rem] flex items-center">
           <header className="mx-auto w-full max-w-7xl px-4 md:px-6 lg:px-8">
-            <h1 className="text-2xl font-semibold text-white text-center">
+            <h1 className="text-2xl font-bold text-gray-800 text-center">
               Live Voice Real-time Transcription
             </h1>
           </header>
