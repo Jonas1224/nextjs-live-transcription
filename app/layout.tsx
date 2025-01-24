@@ -1,14 +1,10 @@
 import { Inter } from "next/font/google";
 import classNames from "classnames";
 import localFont from "next/font/local";
-
-import { DeepgramContextProvider } from "./context/DeepgramContextProvider";
-import { MicrophoneContextProvider } from "./context/MicrophoneContextProvider";
-import { AuthContextProvider } from "./context/AuthContext";
-
+import dynamic from 'next/dynamic';
 import "./globals.css";
-
 import type { Metadata, Viewport } from "next";
+import React from "react";
 
 const inter = Inter({ subsets: ["latin"] });
 const favorit = localFont({
@@ -16,12 +12,15 @@ const favorit = localFont({
   variable: "--font-favorit",
 });
 
-export const viewport: Viewport = {
-  themeColor: "#000000",
-  initialScale: 1,
-  width: "device-width",
-  // maximumScale: 1, hitting accessability
-};
+// Import Providers with no SSR and suspense
+const Providers = dynamic(
+  () => import('./components/Providers'),
+  { 
+    ssr: false,
+    loading: () => <div className="h-full" />,
+    suspense: true,
+  }
+);
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://aura-tts-demo.deepgram.com"),
@@ -33,18 +32,11 @@ export const metadata: Metadata = {
   },
 };
 
-// Separate the client components
-function Providers({ children }: { children: React.ReactNode }) {
-  return (
-    <AuthContextProvider>
-      <MicrophoneContextProvider>
-        <DeepgramContextProvider>
-          {children}
-        </DeepgramContextProvider>
-      </MicrophoneContextProvider>
-    </AuthContextProvider>
-  );
-}
+export const viewport: Viewport = {
+  themeColor: "#000000",
+  initialScale: 1,
+  width: "device-width",
+};
 
 export default function RootLayout({
   children,
@@ -53,13 +45,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="h-dvh">
-      <body
-        className={`h-full dark ${classNames(
-          favorit.variable,
-          inter.className
-        )}`}
-      >
-        <Providers>{children}</Providers>
+      <body className={`h-full dark ${classNames(favorit.variable, inter.className)}`}>
+        <React.Suspense fallback={<div className="h-full" />}>
+          <Providers>{children}</Providers>
+        </React.Suspense>
       </body>
     </html>
   );

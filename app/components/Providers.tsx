@@ -1,14 +1,16 @@
 'use client';
 
 import { AuthContextProvider } from "../context/AuthContext";
-import { DeepgramContextProvider } from "../context/DeepgramContextProvider";
 import { MicrophoneContextProvider } from "../context/MicrophoneContextProvider";
+import { DeepgramContextProvider } from "../context/DeepgramContextProvider";
 
-export function Providers({ children }: { children: React.ReactNode }) {
+export default function Providers({ children }: { children: React.ReactNode }) {
   return (
     <AuthContextProvider>
       <MicrophoneContextProvider>
-        <DeepgramContextProvider>{children}</DeepgramContextProvider>
+        <DeepgramContextProvider>
+          {children}
+        </DeepgramContextProvider>
       </MicrophoneContextProvider>
     </AuthContextProvider>
   );
