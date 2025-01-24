@@ -4,6 +4,7 @@ import localFont from "next/font/local";
 
 import { DeepgramContextProvider } from "./context/DeepgramContextProvider";
 import { MicrophoneContextProvider } from "./context/MicrophoneContextProvider";
+import { AuthContextProvider } from "./context/AuthContext";
 
 import "./globals.css";
 
@@ -32,6 +33,19 @@ export const metadata: Metadata = {
   },
 };
 
+// Separate the client components
+function Providers({ children }: { children: React.ReactNode }) {
+  return (
+    <AuthContextProvider>
+      <MicrophoneContextProvider>
+        <DeepgramContextProvider>
+          {children}
+        </DeepgramContextProvider>
+      </MicrophoneContextProvider>
+    </AuthContextProvider>
+  );
+}
+
 export default function RootLayout({
   children,
 }: {
@@ -45,9 +59,7 @@ export default function RootLayout({
           inter.className
         )}`}
       >
-        <MicrophoneContextProvider>
-          <DeepgramContextProvider>{children}</DeepgramContextProvider>
-        </MicrophoneContextProvider>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

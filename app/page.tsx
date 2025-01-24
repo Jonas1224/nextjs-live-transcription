@@ -1,14 +1,18 @@
 "use client";
 
-import App from "./components/App";
+import ProtectedRoute from './components/Auth/ProtectedRoute';
+import UserInfo from './components/Auth/UserInfo';
+import App from './components/App';
 import { XIcon } from "./components/icons/XIcon";
 import { LinkedInIcon } from "./components/icons/LinkedInIcon";
 import { FacebookIcon } from "./components/icons/FacebookIcon";
 
 const Home = () => {
   return (
-    <>
+    <ProtectedRoute>
       <div className="h-full overflow-hidden">
+        <UserInfo />
+        
         {/* New simple header */}
         <div className="bg-white border-b h-[4rem] flex items-center">
           <header className="mx-auto w-full max-w-7xl px-4 md:px-6 lg:px-8">
@@ -84,7 +88,7 @@ const Home = () => {
           </footer>
         </div>
       </div>
-    </>
+    </ProtectedRoute>
   );
 };
 
