@@ -14,10 +14,43 @@ import {
 } from "../context/MicrophoneContextProvider";
 import Visualizer from "./Visualizer";
 
+type DownloadContent = {
+  transcript: boolean;
+  translation: boolean;
+  summary: boolean;
+};
+
+const formatContent = (
+  transcripts: string[],
+  translations: string[],
+  summary: string,
+  selection: DownloadContent
+): string => {
+  let content = '';
+  
+  if (selection.transcript) {
+    content += '# Original Text\n\n';
+    content += transcripts.join(' ') + '\n\n';
+  }
+  
+  if (selection.translation) {
+    content += '# Translated Text\n\n';
+    content += translations.join(' ') + '\n\n';
+  }
+  
+  if (selection.summary) {
+    content += '# Summary\n\n';
+    content += summary + '\n';
+  }
+  
+  return content;
+};
+
 const App: () => JSX.Element = () => {
   const [transcripts, setTranscripts] = useState<string[]>([]);
   const [translations, setTranslations] = useState<string[]>([]);
   const [pendingTranscripts, setPendingTranscripts] = useState<string[]>([]);
+  const [processedTranscripts, setProcessedTranscripts] = useState<Set<string>>(new Set());
   const [isListening, setIsListening] = useState(false);
   const [targetLanguage, setTargetLanguage] = useState('Original'); // Changed default to Original
   const { connection, connectToDeepgram, disconnectFromDeepgram, connectionState } = useDeepgram();
@@ -26,11 +59,20 @@ const App: () => JSX.Element = () => {
   const [summary, setSummary] = useState<string>('');
   const [isSummarizing, setIsSummarizing] = useState(false);
   const [showLineBreaks, setShowLineBreaks] = useState(false);
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [downloadSelection, setDownloadSelection] = useState<DownloadContent>({
+    transcript: true,
+    translation: true,
+    summary: true,
+  });
 
   // Batch size and timer configurations
   const BATCH_SIZE = 5; // Number of transcripts to collect before translating
   const BATCH_TIMEOUT = 5000; // 10 seconds
   const batchTimeoutRef = useRef<NodeJS.Timeout>();
+
+  // Add a constant for group size
+  const TRANSCRIPTS_PER_LINE = 6; // or 4, depending on preference
 
   useEffect(() => {
     setupMicrophone();
@@ -43,12 +85,12 @@ const App: () => JSX.Element = () => {
       if (microphoneState === MicrophoneState.Ready || microphoneState === MicrophoneState.Paused) {
         try {
           await connectToDeepgram({
-            model: "nova-2",
-            interim_results: true,
-            smart_format: true,
-            filler_words: true,
-            utterance_end_ms: 3000,
-          });
+        model: "nova-2",
+        interim_results: true,
+        smart_format: true,
+        filler_words: true,
+        utterance_end_ms: 3000,
+      });
           setIsListening(true);
         } catch (error) {
           console.error("Failed to connect:", error);
@@ -71,28 +113,28 @@ const App: () => JSX.Element = () => {
     }
   };
 
-  // Function to translate multiple transcripts at once
+  // Modified translateBatch function without logs
   const translateBatch = async (textsToTranslate: string[]) => {
-    // Skip translation if 'Original' is selected
     if (targetLanguage === 'Original' || textsToTranslate.length === 0) {
       return;
     }
 
+    const newTexts = textsToTranslate.filter(text => !processedTranscripts.has(text));
+    if (newTexts.length === 0) return;
+
     try {
-      const combinedText = textsToTranslate.join(' ');
+      const combinedText = newTexts.join(' ');
       const response = await fetch('/api/translate', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          text: combinedText,
-          targetLanguage,
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: combinedText, targetLanguage }),
       });
 
       const data = await response.json();
       if (data.translation) {
+        const newProcessed = new Set(processedTranscripts);
+        newTexts.forEach(text => newProcessed.add(text));
+        setProcessedTranscripts(newProcessed);
         setTranslations(prev => [...prev, data.translation]);
       }
     } catch (error) {
@@ -100,7 +142,7 @@ const App: () => JSX.Element = () => {
     }
   };
 
-  // Modified onTranscript function with fixed batching
+  // Modified onTranscript function without logs
   const onTranscript = (data: LiveTranscriptionEvent) => {
     const { is_final: isFinal } = data;
     let thisCaption = data.channel.alternatives[0].transcript;
@@ -108,35 +150,35 @@ const App: () => JSX.Element = () => {
     if (thisCaption !== "" && isFinal) {
       setTranscripts(prev => [...prev, thisCaption]);
       
-      // Add to pending transcripts and process
-      setPendingTranscripts(prev => {
-        const newPending = [...prev, thisCaption];
-        
-        // Clear any existing timeout
-        if (batchTimeoutRef.current) {
-          clearTimeout(batchTimeoutRef.current);
-        }
-
-        // If we have enough transcripts, translate immediately
-        if (newPending.length >= BATCH_SIZE) {
-          // Process in the next tick to avoid state update conflicts
-          setTimeout(() => {
-            translateBatch(newPending);
-            setPendingTranscripts([]); // Clear pending after translation
-          }, 0);
-          return []; // Clear pending immediately
-        }
-
-        // Set new timeout for remaining transcripts
-        batchTimeoutRef.current = setTimeout(() => {
-          if (newPending.length > 0) {
-            translateBatch(newPending);
-            setPendingTranscripts([]); // Clear pending after timeout translation
+      if (!processedTranscripts.has(thisCaption)) {
+        setPendingTranscripts(prev => {
+          const newPending = [...prev, thisCaption];
+          
+          if (batchTimeoutRef.current) {
+            clearTimeout(batchTimeoutRef.current);
+            batchTimeoutRef.current = null;
           }
-        }, BATCH_TIMEOUT);
 
-        return newPending;
-      });
+          // For batch size case, just return empty array
+          if (newPending.length >= BATCH_SIZE) {
+            if (!batchTimeoutRef.current) {
+              batchTimeoutRef.current = setTimeout(() => {
+                translateBatch([...newPending]);
+                batchTimeoutRef.current = null;
+              }, 0);
+            }
+            return [];
+          }
+
+          // For timeout case
+          batchTimeoutRef.current = setTimeout(() => {
+            translateBatch([...newPending]);
+            setPendingTranscripts([]);
+          }, BATCH_TIMEOUT);
+
+          return newPending;
+        });
+      }
     }
   };
 
@@ -211,6 +253,27 @@ const App: () => JSX.Element = () => {
     }
   };
 
+  // Add cleanup for language change
+  useEffect(() => {
+    // Clear translations and processed transcripts when language changes
+    setTranslations([]);
+    setProcessedTranscripts(new Set());
+    setPendingTranscripts([]);
+  }, [targetLanguage]);
+
+  const handleDownload = () => {
+    const content = formatContent(transcripts, translations, summary, downloadSelection);
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'transcription-content.txt';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <>
       <div className="flex h-full antialiased">
@@ -275,15 +338,32 @@ const App: () => JSX.Element = () => {
                     <div className="bg-gray-50 rounded-lg border border-gray-200 p-6 min-h-[300px]">
                       {transcripts.length > 0 ? (
                         <div className={showLineBreaks ? 'space-y-2' : ''}>
-                          {transcripts.map((transcript, index) => (
-                            <span 
-                              key={index} 
-                              className={`text-gray-700 ${showLineBreaks ? 'block' : 'inline'}`}
-                            >
-                              {transcript}
-                              {!showLineBreaks && index < transcripts.length - 1 && ' '}
-                            </span>
-                          ))}
+                          {showLineBreaks ? (
+                            // Group transcripts when showing line breaks
+                            Array.from({ length: Math.ceil(transcripts.length / TRANSCRIPTS_PER_LINE) }).map((_, groupIndex) => (
+                              <div key={groupIndex} className="block">
+                                {transcripts
+                                  .slice(groupIndex * TRANSCRIPTS_PER_LINE, (groupIndex + 1) * TRANSCRIPTS_PER_LINE)
+                                  .map((transcript, index) => (
+                                    <span key={index} className="text-gray-700">
+                                      {transcript}
+                                      {index < TRANSCRIPTS_PER_LINE - 1 && ' '}
+                                    </span>
+                                  ))}
+                              </div>
+                            ))
+                          ) : (
+                            // Original continuous display
+                            transcripts.map((transcript, index) => (
+                              <span 
+                                key={index} 
+                                className="text-gray-700 inline"
+                              >
+                                {transcript}
+                                {index < transcripts.length - 1 && ' '}
+                              </span>
+                            ))
+                          )}
                         </div>
                       ) : (
                         <div className="text-gray-500">No transcription yet...</div>
@@ -309,6 +389,8 @@ const App: () => JSX.Element = () => {
                                 {!showLineBreaks && index < translations.length - 1 && ' '}
                               </span>
                             ))}
+                            
+                           
                           </div>
                         ) : (
                           <div className="text-gray-500">No translation yet...</div>
@@ -348,6 +430,69 @@ const App: () => JSX.Element = () => {
                     Click "Generate Summary" to get a summary and key points of the transcript
                   </div>
                 )}
+              </div>
+            </div>
+
+            {/* Download content section - moved here */}
+            <div className="bg-white rounded-lg border overflow-hidden">
+              <div className="p-4 bg-gray-50 border-b">
+                <h2 className="text-2xl font-bold text-gray-800">Download Content</h2>
+              </div>
+              <div className="p-6">
+                <div className="flex items-center gap-6 mb-4">
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={downloadSelection.transcript}
+                      onChange={(e) => setDownloadSelection(prev => ({
+                        ...prev,
+                        transcript: e.target.checked
+                      }))}
+                      className="w-4 h-4 rounded border-gray-300"
+                    />
+                    <span className="text-gray-700">Original Text</span>
+                  </label>
+                  
+                  {targetLanguage !== 'Original' && (
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={downloadSelection.translation}
+                        onChange={(e) => setDownloadSelection(prev => ({
+                          ...prev,
+                          translation: e.target.checked
+                        }))}
+                        className="w-4 h-4 rounded border-gray-300"
+                      />
+                      <span className="text-gray-700">Translation</span>
+                    </label>
+                  )}
+                  
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={downloadSelection.summary}
+                      onChange={(e) => setDownloadSelection(prev => ({
+                        ...prev,
+                        summary: e.target.checked
+                      }))}
+                      className="w-4 h-4 rounded border-gray-300"
+                    />
+                    <span className="text-gray-700">Summary</span>
+                  </label>
+                </div>
+                
+                <button
+                  onClick={handleDownload}
+                  disabled={!downloadSelection.transcript && !downloadSelection.translation && !downloadSelection.summary}
+                  className={`px-4 py-2 rounded-md font-medium ${
+                    !downloadSelection.transcript && !downloadSelection.translation && !downloadSelection.summary
+                      ? 'bg-gray-300 cursor-not-allowed'
+                      : 'bg-blue-500 hover:bg-blue-600'
+                  } text-white transition-colors`}
+                >
+                  Download Selected Content
+                </button>
               </div>
             </div>
           </div>
