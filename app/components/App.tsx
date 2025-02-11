@@ -156,7 +156,7 @@ const App: () => JSX.Element = () => {
           
           if (batchTimeoutRef.current) {
             clearTimeout(batchTimeoutRef.current);
-            batchTimeoutRef.current = null;
+            batchTimeoutRef.current = undefined;
           }
 
           // For batch size case, just return empty array
@@ -164,7 +164,7 @@ const App: () => JSX.Element = () => {
             if (!batchTimeoutRef.current) {
               batchTimeoutRef.current = setTimeout(() => {
                 translateBatch([...newPending]);
-                batchTimeoutRef.current = null;
+                batchTimeoutRef.current = undefined;
               }, 0);
             }
             return [];
