@@ -58,7 +58,7 @@ const App: () => JSX.Element = () => {
   const keepAliveInterval = useRef<any>();
   const [summary, setSummary] = useState<string>('');
   const [isSummarizing, setIsSummarizing] = useState(false);
-  const [showLineBreaks, setShowLineBreaks] = useState(false);
+  const [showLineBreaks, setShowLineBreaks] = useState(true);
   const [isTranslating, setIsTranslating] = useState(false);
   const [downloadSelection, setDownloadSelection] = useState<DownloadContent>({
     transcript: true,
@@ -67,12 +67,8 @@ const App: () => JSX.Element = () => {
   });
 
   // Batch size and timer configurations
-  const BATCH_SIZE = 5; // Number of transcripts to collect before translating
   const BATCH_TIMEOUT = 5000; // 10 seconds
   const batchTimeoutRef = useRef<NodeJS.Timeout>();
-
-  // Add a constant for group size
-  const TRANSCRIPTS_PER_LINE = 6; // or 4, depending on preference
 
   useEffect(() => {
     setupMicrophone();
@@ -142,7 +138,12 @@ const App: () => JSX.Element = () => {
     }
   };
 
-  // Modified onTranscript function without logs
+  // Add a helper function to count periods in an array of texts
+  const countPeriods = (texts: string[]): number => {
+    return texts.filter(text => text.trim().endsWith('.')).length;
+  };
+
+  // Modify the onTranscript function
   const onTranscript = (data: LiveTranscriptionEvent) => {
     const { is_final: isFinal } = data;
     let thisCaption = data.channel.alternatives[0].transcript;
@@ -159,8 +160,8 @@ const App: () => JSX.Element = () => {
             batchTimeoutRef.current = undefined;
           }
 
-          // For batch size case, just return empty array
-          if (newPending.length >= BATCH_SIZE) {
+          // Check for two complete sentences instead of batch size
+          if (countPeriods(newPending) >= 2) {
             if (!batchTimeoutRef.current) {
               batchTimeoutRef.current = setTimeout(() => {
                 translateBatch([...newPending]);
@@ -170,7 +171,7 @@ const App: () => JSX.Element = () => {
             return [];
           }
 
-          // For timeout case
+          // Keep the timeout case for pending translations
           batchTimeoutRef.current = setTimeout(() => {
             translateBatch([...newPending]);
             setPendingTranscripts([]);
@@ -274,6 +275,32 @@ const App: () => JSX.Element = () => {
     URL.revokeObjectURL(url);
   };
 
+  // First, add a helper function to group sentences
+  const groupSentences = (texts: string[]): string[][] => {
+    const groups: string[][] = [];
+    let currentGroup: string[] = [];
+    let periodCount = 0;
+
+    texts.forEach(text => {
+      currentGroup.push(text);
+      if (text.trim().endsWith('.')) {
+        periodCount++;
+        if (periodCount === 2) {
+          groups.push([...currentGroup]);
+          currentGroup = [];
+          periodCount = 0;
+        }
+      }
+    });
+
+    // Add any remaining sentences
+    if (currentGroup.length > 0) {
+      groups.push(currentGroup);
+    }
+
+    return groups;
+  };
+
   return (
     <>
       <div className="flex h-full antialiased">
@@ -312,18 +339,18 @@ const App: () => JSX.Element = () => {
 
               {/* Add format toggle button */}
               
-              {/* <button
+              { <button
                 onClick={() => setShowLineBreaks(!showLineBreaks)}
                 className="px-4 py-2 rounded-md border border-gray-300 bg-white text-gray-800 font-medium hover:bg-gray-50"
               >
-                {showLineBreaks ? 'Show Continuous' : 'Show Segments'}
-              </button> */}
+                {showLineBreaks ? '不换行' : '换行'}
+              </button> }
               
             </div>
           </div>
 
           {/* Main content container */}
-          <div className="max-w-4xl mx-auto w-full space-y-6">
+          <div className="max-w-6xl mx-auto w-full space-y-6">
             {/* Transcription & Translation section */}
             <div className="bg-white rounded-lg border overflow-hidden">
               <div className="p-4 bg-gray-50 border-b">
@@ -337,21 +364,19 @@ const App: () => JSX.Element = () => {
                     <div className="mb-4">
                       <h3 className="text-xl font-semibold text-gray-700">转录</h3>
                     </div>
-                    <div className="bg-gray-50 rounded-lg border border-gray-200 p-6 min-h-[300px]">
+                    <div className="bg-gray-50 rounded-lg border border-gray-200 p-6 min-h-[300px] max-h-[500px] overflow-y-auto">
                       {transcripts.length > 0 ? (
                         <div className={showLineBreaks ? 'space-y-2' : ''}>
                           {showLineBreaks ? (
-                            // Group transcripts when showing line breaks
-                            Array.from({ length: Math.ceil(transcripts.length / TRANSCRIPTS_PER_LINE) }).map((_, groupIndex) => (
+                            // Group by sentences instead of fixed size
+                            groupSentences(transcripts).map((group, groupIndex) => (
                               <div key={groupIndex} className="block">
-                                {transcripts
-                                  .slice(groupIndex * TRANSCRIPTS_PER_LINE, (groupIndex + 1) * TRANSCRIPTS_PER_LINE)
-                                  .map((transcript, index) => (
-                                    <span key={index} className="text-gray-700">
-                                      {transcript}
-                                      {index < TRANSCRIPTS_PER_LINE - 1 && ' '}
-                                    </span>
-                                  ))}
+                                {group.map((transcript, index) => (
+                                  <span key={index} className="text-gray-700">
+                                    {transcript}
+                                    {index < group.length - 1 && ' '}
+                                  </span>
+                                ))}
                               </div>
                             ))
                           ) : (
@@ -379,10 +404,10 @@ const App: () => JSX.Element = () => {
                       <div className="mb-4">
                         <h3 className="text-xl font-semibold text-gray-700">翻译</h3>
                       </div>
-                      <div className="bg-gray-50 rounded-lg border border-gray-200 p-6 min-h-[300px]">
+                      <div className="bg-gray-50 rounded-lg border border-gray-200 p-6 min-h-[300px] max-h-[500px] overflow-y-auto">
                         {translations.length > 0 ? (
                           <div className={showLineBreaks ? 'space-y-2' : ''}>
-                            {translations.map((translation, index) => (
+                           {translations.map((translation, index) => (
                               <span 
                                 key={index} 
                                 className={`text-gray-700 ${showLineBreaks ? 'block' : 'inline'}`}
@@ -391,8 +416,6 @@ const App: () => JSX.Element = () => {
                                 {!showLineBreaks && index < translations.length - 1 && ' '}
                               </span>
                             ))}
-                            
-                           
                           </div>
                         ) : (
                           <div className="text-gray-500">No translation yet...</div>
@@ -429,7 +452,7 @@ const App: () => JSX.Element = () => {
                   </div>
                 ) : (
                   <div className="text-gray-500 text-center">
-                    点击“生成总结”以获取总结和要点
+                    点击"生成总结"以获取总结和要点
                   </div>
                 )}
               </div>
