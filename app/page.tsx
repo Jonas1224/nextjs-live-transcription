@@ -1,13 +1,17 @@
 "use client";
 
+import { useState } from 'react';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
 import UserInfo from './components/Auth/UserInfo';
 import App from './components/App';
-import { XIcon } from "./components/icons/XIcon";
-import { LinkedInIcon } from "./components/icons/LinkedInIcon";
-import { FacebookIcon } from "./components/icons/FacebookIcon";
+import FeedbackModal from './components/FeedbackModal';
+//import { XIcon } from "./components/icons/XIcon";
+//import { LinkedInIcon } from "./components/icons/LinkedInIcon";
+//import { FacebookIcon } from "./components/icons/FacebookIcon";
 
 const Home = () => {
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+
   return (
     <ProtectedRoute>
       <div className="h-full overflow-hidden">
@@ -17,7 +21,7 @@ const Home = () => {
         <div className="bg-white border-b h-[4rem] flex items-center">
           <header className="mx-auto w-full max-w-7xl px-4 md:px-6 lg:px-8">
             <h1 className="text-2xl font-bold text-gray-800 text-center">
-              Live Voice Real-time Transcription
+              实时转录-实时翻译
             </h1>
           </header>
         </div>
@@ -30,6 +34,7 @@ const Home = () => {
         {/* Footer */}
         <div className="bg-black/80 h-[4rem] flex items-center absolute w-full bottom-0">
           <footer className="mx-auto w-full max-w-7xl px-4 md:px-6 lg:px-8 flex items-center justify-center gap-4 md:text-xl font-inter text-[#8a8a8e]">
+            {/* Commented out share section
             <span className="text-base text-[#4e4e52]">share it</span>
             <a
               href="#"
@@ -78,15 +83,20 @@ const Home = () => {
               <FacebookIcon className="mb-1" />
             </a>
             <div className="border-l border-[#4e4e52] w-px h-7">&nbsp;</div>
-            <a
-              className="text-base font-semibold"
-              href="https://deepgram.com/contact-us"
-              target="_blank"
+            */}
+            <button
+              onClick={() => setIsFeedbackOpen(true)}
+              className="text-base font-semibold text-white-400 hover:text-white-300 transition-colors animate-pulse"
             >
-              contact us
-            </a>
+              有什么建议吗？
+            </button>
           </footer>
         </div>
+
+        <FeedbackModal 
+          isOpen={isFeedbackOpen}
+          onClose={() => setIsFeedbackOpen(false)}
+        />
       </div>
     </ProtectedRoute>
   );

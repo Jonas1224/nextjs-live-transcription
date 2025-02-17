@@ -19,8 +19,9 @@ export function AuthContextProvider({ children }: { children: React.ReactNode })
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
+        /* Commented out email verification check
         // If user exists but email is not verified during sign up
         if (!user.emailVerified && user.metadata.creationTime === user.metadata.lastSignInTime) {
           // Sign out and wait for verification
@@ -29,6 +30,8 @@ export function AuthContextProvider({ children }: { children: React.ReactNode })
         } else {
           setUser(user);
         }
+        */
+        setUser(user);
       } else {
         setUser(null);
       }

@@ -282,7 +282,7 @@ const App: () => JSX.Element = () => {
           <div className="mb-6 text-center">
             <div className="flex items-center justify-center gap-4">
               <span className="text-gray-700 font-medium">
-                Target Language:
+                翻译语言:
               </span>
               <select
                 value={targetLanguage}
@@ -294,9 +294,9 @@ const App: () => JSX.Element = () => {
                 }}
                 className="px-4 py-2 rounded-md border border-gray-300 bg-white text-gray-800 font-medium shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
               >
-                <option value="Original">Original</option>
-                <option value="Chinese">Chinese</option>
-                <option value="Spanish">Spanish</option>
+                <option value="Original">不翻译</option>
+                <option value="Chinese">中文</option>
+                <option value="Spanish">西班牙语</option>
               </select>
 
               <button
@@ -307,16 +307,18 @@ const App: () => JSX.Element = () => {
                     : 'bg-green-500 hover:bg-green-600'
                 } text-white transition-colors`}
               >
-                {isListening ? 'Stop Listening' : 'Start Listening'}
+                {isListening ? '停止转录' : '开始转录'}
               </button>
 
               {/* Add format toggle button */}
-              <button
+              
+              {/* <button
                 onClick={() => setShowLineBreaks(!showLineBreaks)}
                 className="px-4 py-2 rounded-md border border-gray-300 bg-white text-gray-800 font-medium hover:bg-gray-50"
               >
                 {showLineBreaks ? 'Show Continuous' : 'Show Segments'}
-              </button>
+              </button> */}
+              
             </div>
           </div>
 
@@ -325,7 +327,7 @@ const App: () => JSX.Element = () => {
             {/* Transcription & Translation section */}
             <div className="bg-white rounded-lg border overflow-hidden">
               <div className="p-4 bg-gray-50 border-b">
-                <h2 className="text-2xl font-bold text-gray-800">Transcription & Translation</h2>
+                <h2 className="text-2xl font-bold text-gray-800">转录 & 翻译</h2>
               </div>
               
               <div className="p-6">
@@ -333,7 +335,7 @@ const App: () => JSX.Element = () => {
                   {/* Original text */}
                   <div>
                     <div className="mb-4">
-                      <h3 className="text-xl font-semibold text-gray-700">Original Text</h3>
+                      <h3 className="text-xl font-semibold text-gray-700">转录</h3>
                     </div>
                     <div className="bg-gray-50 rounded-lg border border-gray-200 p-6 min-h-[300px]">
                       {transcripts.length > 0 ? (
@@ -366,7 +368,7 @@ const App: () => JSX.Element = () => {
                           )}
                         </div>
                       ) : (
-                        <div className="text-gray-500">No transcription yet...</div>
+                        <div className="text-gray-500">暂无内容</div>
                       )}
                     </div>
                   </div>
@@ -375,7 +377,7 @@ const App: () => JSX.Element = () => {
                   {targetLanguage !== 'Original' && (
                     <div>
                       <div className="mb-4">
-                        <h3 className="text-xl font-semibold text-gray-700">Translated Text</h3>
+                        <h3 className="text-xl font-semibold text-gray-700">翻译</h3>
                       </div>
                       <div className="bg-gray-50 rounded-lg border border-gray-200 p-6 min-h-[300px]">
                         {translations.length > 0 ? (
@@ -405,7 +407,7 @@ const App: () => JSX.Element = () => {
             {/* Summary section */}
             <div className="bg-white rounded-lg border overflow-hidden">
               <div className="flex items-center justify-between p-4 bg-gray-50 border-b">
-                <h2 className="text-2xl font-bold text-gray-800">Summary & Key Points</h2>
+                <h2 className="text-2xl font-bold text-gray-800">总结 & 要点</h2>
                 <button
                   onClick={generateSummary}
                   disabled={isSummarizing || transcripts.length === 0}
@@ -417,7 +419,7 @@ const App: () => JSX.Element = () => {
                       : 'bg-blue-500 hover:bg-blue-600'
                   } text-white transition-colors`}
                 >
-                  {isSummarizing ? 'Generating...' : 'Generate Summary'}
+                  {isSummarizing ? '生成中...' : '生成总结'}
                 </button>
               </div>
               <div className="p-6 min-h-[200px]">
@@ -427,7 +429,7 @@ const App: () => JSX.Element = () => {
                   </div>
                 ) : (
                   <div className="text-gray-500 text-center">
-                    Click "Generate Summary" to get a summary and key points of the transcript
+                    点击“生成总结”以获取总结和要点
                   </div>
                 )}
               </div>
@@ -436,7 +438,7 @@ const App: () => JSX.Element = () => {
             {/* Download content section - moved here */}
             <div className="bg-white rounded-lg border overflow-hidden">
               <div className="p-4 bg-gray-50 border-b">
-                <h2 className="text-2xl font-bold text-gray-800">Download Content</h2>
+                <h2 className="text-2xl font-bold text-gray-800">下载</h2>
               </div>
               <div className="p-6">
                 <div className="flex items-center gap-6 mb-4">
@@ -450,7 +452,7 @@ const App: () => JSX.Element = () => {
                       }))}
                       className="w-4 h-4 rounded border-gray-300"
                     />
-                    <span className="text-gray-700">Original Text</span>
+                    <span className="text-gray-700">转录文档</span>
                   </label>
                   
                   {targetLanguage !== 'Original' && (
@@ -464,7 +466,7 @@ const App: () => JSX.Element = () => {
                         }))}
                         className="w-4 h-4 rounded border-gray-300"
                       />
-                      <span className="text-gray-700">Translation</span>
+                      <span className="text-gray-700">翻译文档</span>
                     </label>
                   )}
                   
@@ -478,7 +480,7 @@ const App: () => JSX.Element = () => {
                       }))}
                       className="w-4 h-4 rounded border-gray-300"
                     />
-                    <span className="text-gray-700">Summary</span>
+                    <span className="text-gray-700">总结</span>
                   </label>
                 </div>
                 
@@ -491,7 +493,7 @@ const App: () => JSX.Element = () => {
                       : 'bg-blue-500 hover:bg-blue-600'
                   } text-white transition-colors`}
                 >
-                  Download Selected Content
+                  下载选定内容
                 </button>
               </div>
             </div>

@@ -40,11 +40,20 @@ export default function LoginPage() {
   }, [router]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white">
-      <div className="max-w-md w-full p-6 bg-white rounded-lg shadow-sm border">
-        <h1 className="text-2xl font-bold mb-6 text-center text-gray-800">
-          {isSignUp ? 'Sign Up' : 'Sign In'}
+    <div className="min-h-screen flex flex-col items-center justify-center bg-white">
+      <div className="text-center mb-8">
+        <h1 className="text-3xl font-bold text-gray-800">
+          上课开会偷个懒 
         </h1>
+        <p className="mt-2 text-gray-600">
+          {isSignUp ? '创建账号开始使用' : '登录账号继续使用'}
+        </p>
+      </div>
+
+      <div className="max-w-md w-full p-6 bg-white rounded-lg shadow-sm border">
+        <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">
+          {isSignUp ? '注册' : '登录'}
+        </h2>
         {error && (
           <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-md">
             {error}
