@@ -14,7 +14,7 @@ const Home = () => {
 
   return (
     <ProtectedRoute>
-      <div className="h-full overflow-hidden">
+      <div className="h-full overflow-hidden bg-app">
         <UserInfo />
         
         {/* New simple header */}

@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { auth } from '../lib/firebase';
 import { isSignInWithEmailLink, signInWithEmailLink } from 'firebase/auth';
+import Image from 'next/image';
 
 export default function LoginPage() {
   const { user } = useAuth();
@@ -40,7 +41,18 @@ export default function LoginPage() {
   }, [router]);
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-white">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-white bg-app relative">
+      <div className="absolute top-16 right-20">
+        <Image 
+          src="/action.png" 
+          alt="decorative"
+          width={720}
+          height={250}
+          className="w-[720px] h-auto"
+          priority={false}
+        />
+      </div>
+
       <div className="text-center mb-8">
         <h1 className="text-3xl font-bold text-gray-800">
           上课开会偷个懒 
@@ -50,7 +62,7 @@ export default function LoginPage() {
         </p>
       </div>
 
-      <div className="max-w-md w-full p-6 bg-white rounded-lg shadow-sm border">
+      <div className="max-w-md w-full p-6 bg-white/90 rounded-lg shadow-sm border backdrop-blur-sm">
         <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">
           {isSignUp ? '注册' : '登录'}
         </h2>

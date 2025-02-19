@@ -131,7 +131,7 @@ export default function AuthUI({ onModeChange }: AuthUIProps) {
 
       {/* Commented out closing tags for verification message
       )} */}
-
+      {/*}
       <button
         onClick={handleGoogleSignIn}
         className="w-full bg-white text-gray-700 border border-gray-300 rounded-md px-4 py-2 hover:bg-gray-50 flex items-center justify-center gap-2 transition-colors"
@@ -155,7 +155,7 @@ export default function AuthUI({ onModeChange }: AuthUIProps) {
           />
         </svg>
         Continue with Google
-      </button>
+      </button> */}
 
       <div className="text-center">
         <button

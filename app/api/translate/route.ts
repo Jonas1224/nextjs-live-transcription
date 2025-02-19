@@ -14,7 +14,7 @@ export async function POST(request: Request) {
       messages: [
         {
           role: "system",
-          content: `You are a translator. Translate the following text to ${targetLanguage}. Only return the translation, nothing else.`
+          content: `You are a translator. Translate the following text to ${targetLanguage}. The text is from a academic lecture. So please try to align with the context. For example, some general words such as tutorial can refer to specific things. Only return the translation, nothing else.`
         },
         {
           role: "user",

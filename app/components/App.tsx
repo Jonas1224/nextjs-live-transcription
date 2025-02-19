@@ -350,7 +350,7 @@ const App: () => JSX.Element = () => {
           </div>
 
           {/* Main content container */}
-          <div className="max-w-6xl mx-auto w-full space-y-6">
+          <div className="max-w-7xl mx-auto w-full space-y-6">
             {/* Transcription & Translation section */}
             <div className="bg-white rounded-lg border overflow-hidden">
               <div className="p-4 bg-gray-50 border-b">
@@ -364,7 +364,7 @@ const App: () => JSX.Element = () => {
                     <div className="mb-4">
                       <h3 className="text-xl font-semibold text-gray-700">转录</h3>
                     </div>
-                    <div className="bg-gray-50 rounded-lg border border-gray-200 p-6 min-h-[300px] max-h-[500px] overflow-y-auto">
+                    <div className="bg-gray-50 rounded-lg border border-gray-200 p-6 min-h-[300px] max-h-[750px] overflow-y-auto">
                       {transcripts.length > 0 ? (
                         <div className={showLineBreaks ? 'space-y-2' : ''}>
                           {showLineBreaks ? (
@@ -404,9 +404,9 @@ const App: () => JSX.Element = () => {
                       <div className="mb-4">
                         <h3 className="text-xl font-semibold text-gray-700">翻译</h3>
                       </div>
-                      <div className="bg-gray-50 rounded-lg border border-gray-200 p-6 min-h-[300px] max-h-[500px] overflow-y-auto">
+                      <div className="bg-gray-50 rounded-lg border border-gray-200 p-6 min-h-[300px] max-h-[750px] overflow-y-auto">
                         {translations.length > 0 ? (
-                          <div className={showLineBreaks ? 'space-y-2' : ''}>
+                          <div className={showLineBreaks ? 'space-y-4' : ''}>
                            {translations.map((translation, index) => (
                               <span 
                                 key={index} 
